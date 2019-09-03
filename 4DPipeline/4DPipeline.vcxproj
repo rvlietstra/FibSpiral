@@ -164,6 +164,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="FibonacciPathGenerator.h" />
+    <ClInclude Include="GLHelpers.h" />
     <ClInclude Include="PathGenerator.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Shaders.h" />
@@ -174,6 +175,7 @@
   <ItemGroup>
     <ClCompile Include="4DPipeline.cpp" />
     <ClCompile Include="FibonacciPathGenerator.cpp" />
+    <ClCompile Include="GLHelpers.cpp" />
     <ClCompile Include="PathGenerator.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

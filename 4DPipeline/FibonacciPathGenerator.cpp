@@ -39,7 +39,7 @@ vector<vec3> FibonacciPathGenerator::QuaterCircleVertices(vec3 center, float rad
 
 vector<Vertex> FibonacciPathGenerator::Generate()
 {
-	int numFibs = 14;
+	int numFibs = 12;
 	int segmentsPerQuater = 10;
 	vector<int> fibs = Fib(numFibs);
 	
@@ -68,11 +68,22 @@ vector<Vertex> FibonacciPathGenerator::Generate()
 		// 
 		vector<vec3> circleVertices = QuaterCircleVertices(center, (float)fib, startRadians, segmentsPerQuater);
 		for (auto v : circleVertices)
-			vertices.push_back({ v.x, v.y, v.z, (float)(fib % 2), 0.5f, 1.0f - (float)(fib % 2) });
+			vertices.push_back({ v.x, v.y, v.z });
 
 		//
 		lastPointOnCircle = PointOnCircle(center, (float)fib, startRadians + (pi<float>() / 2.0f));
 		startRadians = iFib * (pi<float>() / 2.0f);
+	}
+
+	// Assign colors
+	float delta = 360.0f / vertices.size();
+	float r, g, b;
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		HSVToRGB(delta * i, 1.0f, 1.0f, r, g, b);
+		vertices[i].r = r;
+		vertices[i].g = g;
+		vertices[i].b = b;
 	}
 
 	return vertices;

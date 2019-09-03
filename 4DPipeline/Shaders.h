@@ -20,16 +20,17 @@ static const char* geometry_shader_text = R"V0G0N(
 uniform mat4 mvp;
 uniform mat4 model;
 uniform mat4 view;
+uniform vec3 light_position;
 
 layout (lines_adjacency) in;
-layout (triangle_strip, max_vertices = 20) out;
+layout (triangle_strip, max_vertices = 40) out;
 
 in vec3 v_color[];
 out vec3 f_normal;
 out vec3 f_color;
 out vec3 f_position;
 
-void Emit(vec3 normal, vec3 p)
+void emit(vec3 normal, vec3 p)
 {
 	f_normal = normalize(model * vec4(normal, 1.0f)).xyz;
 	gl_Position = mvp * vec4(p, 1.0f);
@@ -37,16 +38,36 @@ void Emit(vec3 normal, vec3 p)
     EmitVertex();
 }
 
+void emit_ground_intersection(vec3 p)
+{
+	vec3 up  = vec3(0, 0, -1);
+	vec3 ground = vec3(0, 0, 0);
+
+	// Project the point to the ground plane
+	vec3 direction_normal = normalize(light_position - p);
+	float d = -dot(ground, up);
+	float v = dot(direction_normal, up);
+	float t = -(dot(light_position, up) + d) / v;
+	vec3 intersection = light_position + (direction_normal * t);
+
+	//
+	f_color = vec3(0.3f, 0.3f, 0.3f);
+	f_normal = up;
+	gl_Position = mvp * vec4(intersection, 1.0f);
+	f_position = gl_Position.xyz;
+
+	EmitVertex();	
+}
+
 void main()
 { 
 	// Should expose these
-	float width = 2.0f;
-	float height = -40;
-	vec3 half_height = vec3(0, 0, height / 2.0f);
+	float width = 3;
+	vec3 height = vec3(0, 0, 20);
 
 	//
-	vec3 up  = vec3(0, 0, 1);
-	vec3 down  = vec3(0, 0, -1);
+	vec3 up  = vec3(0, 0, -1);
+	vec3 down  = vec3(0, 0, 1);
 
     vec3 prev = gl_in[0].gl_Position.xyz;
     vec3 start = gl_in[1].gl_Position.xyz;
@@ -65,10 +86,10 @@ void main()
 	vec3 leftVector = cross(endStartNorm, up);
     
 	// The vector in the middel of startPrev and startEnd	
-    vec3 startOffsetNorm = normalize((startPrevNorm + startEndNorm) * 0.5f);	
+    vec3 startOffsetNorm = -normalize((startPrevNorm + startEndNorm) * 0.5f);	
 
 	// The vector in the middel of endStartNorm and endNextNorm
-	vec3 endOffsetNorm = normalize((endStartNorm + endNextNorm) * 0.5f);
+	vec3 endOffsetNorm = -normalize((endStartNorm + endNextNorm) * 0.5f);
 
 	// Half the width on each side
     vec3 startOffset = startOffsetNorm * width * 0.5f;
@@ -89,31 +110,57 @@ void main()
 	vec3 p4 = end - endOffset;
 
 	// Top
-	Emit(up, p3 - half_height);
-	Emit(up, p4 - half_height);	
-	Emit(up, p1 - half_height);	
-	Emit(up, p2 - half_height);	
+	emit(up, p3 - height);
+	emit(up, p4 - height);	
+	emit(up, p1 - height);	
+	emit(up, p2 - height);	
 	EndPrimitive();
+
 
 	// Bottom
-	Emit(down, p1 + half_height);
-	Emit(down, p2 + half_height);
-	Emit(down, p3 + half_height);
-	Emit(down, p4 + half_height);
-	EndPrimitive();
+	//emit(down, p1);
+	//emit(down, p2);
+	//emit(down, p3);
+	//emit(down, p4);
+	//EndPrimitive();
 
 	// Left
-	Emit(endOffset, p3 + half_height);
-	Emit(endOffset, p3 - half_height);
-	Emit(startOffset, p1 + half_height);
-	Emit(startOffset, p1 - half_height);
+	emit(endOffsetNorm, p3);
+	emit(endOffsetNorm, p3 - height);
+	emit(startOffsetNorm, p1);
+	emit(startOffsetNorm, p1 - height);
 	EndPrimitive();
 
 	// Right
-	Emit(endOffset, p4 - half_height);
-	Emit(endOffset, p4 + half_height);
-	Emit(startOffset, p2 - half_height);
-	Emit(startOffset, p2 + half_height);
+	emit(endOffsetNorm, p4 - height);
+	emit(endOffsetNorm, p4);
+	emit(startOffsetNorm, p2 - height);
+	emit(startOffsetNorm, p2);
+	EndPrimitive();
+	
+	// Shadows	
+	//emit_ground_intersection(p1);
+	//emit_ground_intersection(p2);
+	//emit_ground_intersection(p3);
+	//emit_ground_intersection(p4);
+	//EndPrimitive();
+
+	emit_ground_intersection(p1 - height);
+	emit_ground_intersection(p2 - height);
+	emit_ground_intersection(p3 - height);
+	emit_ground_intersection(p4 - height);
+	EndPrimitive();
+
+	emit_ground_intersection(p3);
+	emit_ground_intersection(p3 - height);
+	emit_ground_intersection(p1);
+	emit_ground_intersection(p1 - height);	
+	EndPrimitive();
+
+	emit_ground_intersection(p4 - height);
+	emit_ground_intersection(p4);
+	emit_ground_intersection(p2 - height);
+	emit_ground_intersection(p2);
 	EndPrimitive();
 }
 
@@ -139,12 +186,12 @@ void main()
 	vec3 light_direction = normalize(light_position - f_position);  
 
 	//
-	float diff = max(dot(f_normal, light_direction), 0.0f);
+	float diff = max(dot(light_direction, f_normal) , 0.0f);
 	vec3 diffuse = diff * light_color;
 
 	//
 	vec3 result = (ambient_color + diffuse) * f_color;
-	out_color = vec4(result, 1.0);
+	out_color = vec4(result, 1.0f);
 } 
 
 )V0G0N";

@@ -19,7 +19,7 @@ vector<Vertex> CirclePathGenerator::Generate()
 	{
 		vec3 p = PointOnCircle(vec3(0), radius_, radians);
 		HSVToRGB(degrees<float>(radians), 1.0f, 1.0f, r, g, b);
-		ret.push_back({ p.x, p.y, sinf(radians * 2.0f) * 2.0f, r, g, b });
+		ret.push_back({ p.x, p.y, 0, r, g, b });
 		radians += delta;
 	}
 
